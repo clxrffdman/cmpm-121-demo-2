@@ -93,3 +93,40 @@ function redraw() {
 }
 
 document.body.append(document.createElement("br"));
+
+const clearButton = document.createElement("button");
+clearButton.innerHTML = "clear";
+document.body.append(clearButton);
+
+clearButton.addEventListener("click", () => {
+  lines.splice(0, lines.length);
+  canvas.dispatchEvent(changedevent);
+});
+
+const undoButton = document.createElement("button");
+undoButton.innerHTML = "undo";
+document.body.append(undoButton);
+
+undoButton.addEventListener("click", () => {
+  if (lines.length > 0) {
+    const latestLine: Point[] | undefined = lines.pop();
+    if (latestLine) {
+      redoLines.push(latestLine);
+    }
+    canvas.dispatchEvent(changedevent);
+  }
+});
+
+const redoButton = document.createElement("button");
+redoButton.innerHTML = "redo";
+document.body.append(redoButton);
+
+redoButton.addEventListener("click", () => {
+  if (redoLines.length > 0) {
+    const latestLine: Point[] | undefined = redoLines.pop();
+    if (latestLine) {
+      lines.push(latestLine);
+    }
+    canvas.dispatchEvent(changedevent);
+  }
+});
