@@ -26,7 +26,7 @@ app.append(canvas);
 
 const cursor = { active: false, x: 0, y: 0 };
 
-const paths = [];
+//const paths = [];
 
 canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
@@ -46,7 +46,9 @@ canvas.addEventListener("mousemove", (e) => {
 });
 
 canvas.addEventListener("mouseup", (e) => {
-  cursor.active = false;
+  if (e) {
+    cursor.active = false;
+  }
 });
 
 const clearButton = document.createElement("button");
