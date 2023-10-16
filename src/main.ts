@@ -6,6 +6,8 @@ const gameName = "Calex's game!";
 
 document.title = gameName;
 
+const changedevent = new Event("drawing-changed");
+
 const header = document.createElement("h1");
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
@@ -22,46 +24,72 @@ header.innerHTML = gameName;
 app.append(header);
 app.append(canvas);
 
-//drawing code from https://shoddy-paint.glitch.me/paint0.html
+interface Point {
+  x: number;
+  y: number;
+}
+
+//starter code from https://shoddy-paint.glitch.me/paint1.html
+const lines: Point[][] = [];
+const redoLines: Point[][] = [];
+
+let currentLine: Point[] = [];
 
 const cursor = { active: false, x: 0, y: 0 };
-
-//const paths = [];
 
 canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
+
+  currentLine = [];
+  lines.push(currentLine);
+  redoLines.splice(0, redoLines.length);
+  currentLine.push({ x: cursor.x, y: cursor.y });
+
+  canvas.dispatchEvent(changedevent);
 });
 
 canvas.addEventListener("mousemove", (e) => {
-  if (cursor.active && ctx) {
-    ctx.beginPath();
-    ctx.moveTo(cursor.x, cursor.y);
-    ctx.lineTo(e.offsetX, e.offsetY);
-    ctx.stroke();
+  if (cursor.active) {
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
+    const newPt: Point = { x: cursor.x, y: cursor.y };
+    currentLine.push(newPt);
+    canvas.dispatchEvent(changedevent);
   }
 });
 
 canvas.addEventListener("mouseup", (e) => {
   if (e) {
     cursor.active = false;
+    currentLine = [];
+    canvas.dispatchEvent(changedevent);
   }
 });
 
-const clearButton = document.createElement("button");
-clearButton.innerHTML = "clear";
-app.append(clearButton);
-
-clearButton.addEventListener("click", () => {
-  clearCanvas();
+canvas.addEventListener("drawing-changed", (e) => {
+  if (e) {
+    redraw();
+  }
 });
 
-function clearCanvas() {
+function redraw() {
   if (ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillRect(0, 0, 256, 256);
+    for (const line of lines) {
+      if (line.length > 1) {
+        ctx.beginPath();
+        const { x, y } = line[0];
+        ctx.moveTo(x, y);
+        for (const { x, y } of line) {
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    }
   }
 }
+
+document.body.append(document.createElement("br"));
