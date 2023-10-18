@@ -6,7 +6,14 @@ const gameName = "Calex's game!";
 
 document.title = gameName;
 
-const changedevent = new Event("drawing-changed");
+const bus = new EventTarget();
+
+function notify(name: string) {
+  bus.dispatchEvent(new Event(name));
+}
+
+bus.addEventListener("drawing-changed", redraw);
+bus.addEventListener("tool-moved", redraw);
 
 const header = document.createElement("h1");
 
@@ -17,6 +24,8 @@ canvas.height = 256;
 
 ctx.fillStyle = "green";
 ctx.fillRect(0, 0, 256, 256);
+
+let previewCmd: PointPreviewCommand | null = null;
 
 //Brushes
 const allBrushes: Brush[] = [
@@ -44,6 +53,25 @@ interface Brush {
 interface BrushButton {
   button: HTMLButtonElement;
   brush: Brush;
+}
+
+class PointPreviewCommand {
+  point: Point;
+
+  constructor(p: Point) {
+    this.point = p;
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    ctx.beginPath();
+    const { x, y } = this.point;
+    ctx.arc(x, y, currentBrush.thickness, 0, 2 * Math.PI, false);
+    ctx.fillStyle = "green";
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = currentBrush.style;
+    ctx.stroke();
+  }
 }
 
 class LineCommand {
@@ -95,7 +123,7 @@ canvas.addEventListener("mousedown", (e) => {
   redoLines.splice(0, redoLines.length);
   currentLine.drag({ x: cursor.x, y: cursor.y });
 
-  canvas.dispatchEvent(changedevent);
+  notify("drawing-changed");
 });
 
 canvas.addEventListener("mousemove", (e) => {
@@ -104,7 +132,14 @@ canvas.addEventListener("mousemove", (e) => {
     cursor.y = e.offsetY;
     const newPt: Point = { x: cursor.x, y: cursor.y };
     currentLine.drag(newPt);
-    canvas.dispatchEvent(changedevent);
+    previewCmd = null;
+    notify("drawing-changed");
+  } else {
+    cursor.x = e.offsetX;
+    cursor.y = e.offsetY;
+    const newPt: Point = { x: cursor.x, y: cursor.y };
+    previewCmd = new PointPreviewCommand(newPt);
+    notify("tool-moved");
   }
 });
 
@@ -112,24 +147,17 @@ canvas.addEventListener("mouseup", (e) => {
   if (e) {
     cursor.active = false;
     currentLine = null;
-    canvas.dispatchEvent(changedevent);
-  }
-});
-
-canvas.addEventListener("drawing-changed", (e) => {
-  if (e) {
-    redraw();
+    notify("drawing-changed");
   }
 });
 
 function redraw() {
-  if (ctx) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillRect(0, 0, 256, 256);
-    for (const line of lines) {
-      line.display(ctx);
-    }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, 256, 256);
+  for (const line of lines) {
+    line.display(ctx);
   }
+  previewCmd?.display(ctx);
 }
 
 document.body.append(document.createElement("br"));
@@ -157,7 +185,7 @@ document.body.append(clearButton);
 
 clearButton.addEventListener("click", () => {
   lines.splice(0, lines.length);
-  canvas.dispatchEvent(changedevent);
+  notify("drawing-changed");
 });
 
 const undoButton = document.createElement("button");
@@ -170,7 +198,7 @@ undoButton.addEventListener("click", () => {
     if (latestLine) {
       redoLines.push(latestLine);
     }
-    canvas.dispatchEvent(changedevent);
+    notify("drawing-changed");
   }
 });
 
@@ -184,6 +212,6 @@ redoButton.addEventListener("click", () => {
     if (latestLine) {
       lines.push(latestLine);
     }
-    canvas.dispatchEvent(changedevent);
+    notify("drawing-changed");
   }
 });
