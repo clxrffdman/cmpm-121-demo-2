@@ -7,6 +7,7 @@ const gameName = "Calex's game!";
 document.title = gameName;
 
 const bus = new EventTarget();
+const canvasSize = 256;
 
 function notify(name: string) {
   bus.dispatchEvent(new Event(name));
@@ -20,11 +21,11 @@ const header = document.createElement("h1");
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d")!;
-canvas.width = 256;
-canvas.height = 256;
+canvas.width = canvasSize;
+canvas.height = canvasSize;
 
 ctx.fillStyle = "green";
-ctx.fillRect(0, 0, 256, 256);
+ctx.fillRect(0, 0, canvasSize, canvasSize);
 
 let previewCmd: PointPreviewCommand | null = null;
 
@@ -86,7 +87,9 @@ class PointPreviewCommand {
 }
 
 class DrawCommand {
-  constructor() {}
+  constructor() {
+    console.log("created dummy drawcmd!");
+  }
 
   display(ctx: CanvasRenderingContext2D) {
     if (!ctx) {
@@ -98,7 +101,6 @@ class DrawCommand {
     if (!p) {
       return;
     }
-    console.log("yo");
   }
 }
 
