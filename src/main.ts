@@ -18,6 +18,14 @@ canvas.height = 256;
 ctx.fillStyle = "green";
 ctx.fillRect(0, 0, 256, 256);
 
+//Brushes
+const allBrushes: Brush[] = [
+  { id: "thin", thickness: 1, style: "black" },
+  { id: "thick", thickness: 5, style: "black" },
+];
+const allBrushButtons: BrushButton[] = [];
+let currentBrush: Brush = allBrushes[0];
+
 header.innerHTML = gameName;
 app.append(header);
 app.append(canvas);
@@ -27,15 +35,35 @@ interface Point {
   y: number;
 }
 
+interface Brush {
+  id: string;
+  thickness: number;
+  style: string;
+}
+
+interface BrushButton {
+  button: HTMLButtonElement;
+  brush: Brush;
+}
+
 class LineCommand {
   points: Point[];
+  brush: Brush | null = null;
 
-  constructor(p: Point) {
+  constructor(
+    p: Point,
+    b: Brush = { id: "default", thickness: 4, style: "black" }
+  ) {
     this.points = [p];
+    this.brush = b;
   }
+
   display(ctx: CanvasRenderingContext2D) {
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 4;
+    if (!this.brush) {
+      return;
+    }
+    ctx.strokeStyle = this.brush.style;
+    ctx.lineWidth = this.brush.thickness;
     ctx.beginPath();
     const { x, y } = this.points[0];
     ctx.moveTo(x, y);
@@ -62,7 +90,7 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
 
-  currentLine = new LineCommand({ x: cursor.x, y: cursor.y });
+  currentLine = new LineCommand({ x: cursor.x, y: cursor.y }, currentBrush);
   lines.push(currentLine);
   redoLines.splice(0, redoLines.length);
   currentLine.drag({ x: cursor.x, y: cursor.y });
@@ -105,6 +133,23 @@ function redraw() {
 }
 
 document.body.append(document.createElement("br"));
+
+allBrushes.forEach((element) => {
+  addBrushButton(element);
+});
+
+function addBrushButton(b: Brush) {
+  const newBrushButton: HTMLButtonElement = document.createElement("button");
+  newBrushButton.innerHTML = b.id;
+  const brushButton: BrushButton = { button: newBrushButton, brush: b };
+  newBrushButton.addEventListener("click", () => swapBrush(b));
+  document.body.append(newBrushButton);
+  allBrushButtons.push(brushButton);
+}
+
+function swapBrush(b: Brush) {
+  currentBrush = b;
+}
 
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "clear";
