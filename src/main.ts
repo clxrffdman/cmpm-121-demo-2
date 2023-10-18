@@ -14,6 +14,7 @@ function notify(name: string) {
 
 bus.addEventListener("drawing-changed", redraw);
 bus.addEventListener("tool-moved", redraw);
+bus.addEventListener("tool-changed", redraw);
 
 const header = document.createElement("h1");
 
@@ -29,8 +30,11 @@ let previewCmd: PointPreviewCommand | null = null;
 
 //Brushes
 const allBrushes: Brush[] = [
-  { id: "thin", thickness: 1, style: "black" },
-  { id: "thick", thickness: 5, style: "black" },
+  { id: "thin", thickness: 1, style: "black", text: "" },
+  { id: "thick", thickness: 5, style: "black", text: "" },
+  { id: "🥕", thickness: 20, style: "black", text: "🥕" },
+  { id: "🦴", thickness: 20, style: "black", text: "🦴" },
+  { id: "🥔", thickness: 20, style: "black", text: "🥔" },
 ];
 const allBrushButtons: BrushButton[] = [];
 let currentBrush: Brush = allBrushes[0];
@@ -48,6 +52,7 @@ interface Brush {
   id: string;
   thickness: number;
   style: string;
+  text: string;
 }
 
 interface BrushButton {
@@ -63,25 +68,49 @@ class PointPreviewCommand {
   }
 
   display(ctx: CanvasRenderingContext2D) {
-    ctx.beginPath();
-    const { x, y } = this.point;
-    ctx.arc(x, y, currentBrush.thickness, 0, 2 * Math.PI, false);
-    ctx.fillStyle = "green";
-    ctx.fill();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = currentBrush.style;
-    ctx.stroke();
+    if (currentBrush.text == "") {
+      ctx.beginPath();
+      const { x, y } = this.point;
+      ctx.arc(x, y, currentBrush.thickness, 0, 2 * Math.PI, false);
+      ctx.fillStyle = "green";
+      ctx.closePath();
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = currentBrush.style;
+      ctx.stroke();
+    } else {
+      ctx.font = currentBrush.thickness + "px serif";
+      ctx.strokeText(currentBrush.text, this.point?.x, this.point?.y);
+    }
   }
 }
 
-class LineCommand {
+class DrawCommand {
+  constructor() {}
+
+  display(ctx: CanvasRenderingContext2D) {
+    if (!ctx) {
+      return;
+    }
+  }
+
+  drag(p: Point) {
+    if (!p) {
+      return;
+    }
+    console.log("yo");
+  }
+}
+
+class LineCommand extends DrawCommand {
   points: Point[];
   brush: Brush | null = null;
 
   constructor(
     p: Point,
-    b: Brush = { id: "default", thickness: 4, style: "black" }
+    b: Brush = { id: "default", thickness: 4, style: "black", text: "" }
   ) {
+    super();
     this.points = [p];
     this.brush = b;
   }
@@ -105,11 +134,36 @@ class LineCommand {
   }
 }
 
-//starter code from https://shoddy-paint.glitch.me/paint1.html + starter code from https://shoddy-paint.glitch.me/paint2.html
-const lines: LineCommand[] = [];
-const redoLines: LineCommand[] = [];
+class StickerCommand extends DrawCommand {
+  point: Point | null = null;
+  brush: Brush | null = null;
 
-let currentLine: LineCommand | null = null;
+  constructor(
+    p: Point,
+    b: Brush = { id: "default", thickness: 4, style: "black", text: "" }
+  ) {
+    super();
+    this.point = p;
+    this.brush = b;
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    if (!this.brush || !this.point) {
+      return;
+    }
+    ctx.font = this.brush.thickness + "px serif";
+    ctx.strokeText(this.brush.text, this.point?.x, this.point?.y);
+  }
+  drag(p: Point) {
+    this.point = p;
+  }
+}
+
+//starter code from https://shoddy-paint.glitch.me/paint1.html + starter code from https://shoddy-paint.glitch.me/paint2.html
+const lines: DrawCommand[] = [];
+const redoLines: DrawCommand[] = [];
+
+let currentLine: DrawCommand | null = null;
 
 const cursor = { active: false, x: 0, y: 0 };
 
@@ -118,7 +172,14 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
 
-  currentLine = new LineCommand({ x: cursor.x, y: cursor.y }, currentBrush);
+  if (currentBrush.text == "") {
+    currentLine = new LineCommand({ x: cursor.x, y: cursor.y }, currentBrush);
+  } else {
+    currentLine = new StickerCommand(
+      { x: cursor.x, y: cursor.y },
+      currentBrush
+    );
+  }
   lines.push(currentLine);
   redoLines.splice(0, redoLines.length);
   currentLine.drag({ x: cursor.x, y: cursor.y });
@@ -194,7 +255,7 @@ document.body.append(undoButton);
 
 undoButton.addEventListener("click", () => {
   if (lines.length > 0) {
-    const latestLine: LineCommand | undefined = lines.pop();
+    const latestLine: DrawCommand | undefined = lines.pop();
     if (latestLine) {
       redoLines.push(latestLine);
     }
@@ -208,7 +269,7 @@ document.body.append(redoButton);
 
 redoButton.addEventListener("click", () => {
   if (redoLines.length > 0) {
-    const latestLine: LineCommand | undefined = redoLines.pop();
+    const latestLine: DrawCommand | undefined = redoLines.pop();
     if (latestLine) {
       lines.push(latestLine);
     }
