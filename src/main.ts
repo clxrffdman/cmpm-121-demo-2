@@ -21,11 +21,12 @@ const header = document.createElement("h1");
 
 const canvas: HTMLCanvasElement = document.createElement("canvas");
 const ctx: CanvasRenderingContext2D = canvas.getContext("2d")!;
+const base = 0;
 canvas.width = canvasSize;
 canvas.height = canvasSize;
 
 ctx.fillStyle = "#fca311";
-ctx.fillRect(0, 0, canvasSize, canvasSize);
+ctx.fillRect(base, base, canvasSize, canvasSize);
 
 let previewCmd: PointPreviewCommand | null = null;
 
@@ -39,8 +40,8 @@ const allBrushes: Brush[] = [
   { id: "🥔", thickness: 20, text: "🥔" },
 ];
 const allBrushButtons: BrushButton[] = [];
-let currentBrush: Brush = allBrushes[0];
-let currentStyle: string = "black";
+let currentBrush: Brush = allBrushes[base];
+let currentStyle = "black";
 
 header.innerHTML = gameName;
 app.append(header);
@@ -73,7 +74,8 @@ class PointPreviewCommand {
     if (currentBrush.text == "") {
       ctx.beginPath();
       const { x, y } = this.point;
-      ctx.arc(x, y, currentBrush.thickness, 0, 2 * Math.PI, false);
+      const tau = Math.PI + Math.PI;
+      ctx.arc(x, y, currentBrush.thickness, base, tau, false);
       ctx.fillStyle = "#fca311";
       ctx.closePath();
       ctx.fill();
@@ -108,7 +110,7 @@ class DrawCommand {
 class LineCommand extends DrawCommand {
   points: Point[];
   brush: Brush | null = null;
-  style: string = "black";
+  style = "black";
 
   constructor(p: Point, b: Brush = { id: "default", thickness: 4, text: "" }) {
     super();
@@ -124,7 +126,7 @@ class LineCommand extends DrawCommand {
     ctx.strokeStyle = this.style;
     ctx.lineWidth = this.brush.thickness;
     ctx.beginPath();
-    const { x, y } = this.points[0];
+    const { x, y } = this.points[base];
     ctx.moveTo(x, y);
     for (const { x, y } of this.points) {
       ctx.lineTo(x, y);
@@ -139,7 +141,7 @@ class LineCommand extends DrawCommand {
 class StickerCommand extends DrawCommand {
   point: Point | null = null;
   brush: Brush | null = null;
-  style: string = "black";
+  style = "black";
 
   constructor(p: Point, b: Brush = { id: "default", thickness: 4, text: "" }) {
     super();
@@ -187,7 +189,7 @@ canvas.addEventListener("mousedown", (e) => {
     );
   }
   lines.push(currentLine);
-  redoLines.splice(0, redoLines.length);
+  redoLines.splice(base, redoLines.length);
   currentLine.drag({ x: cursor.x, y: cursor.y });
 
   notify("drawing-changed");
@@ -217,8 +219,8 @@ canvas.addEventListener("mouseup", () => {
 });
 
 function redraw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillRect(0, 0, 256, 256);
+  ctx.clearRect(base, base, canvas.width, canvas.height);
+  ctx.fillRect(base, base, canvasSize, canvasSize);
   for (const line of lines) {
     line.display(ctx);
   }
@@ -277,7 +279,7 @@ utilityButtons.forEach((element) => {
 });
 
 function undo() {
-  if (lines.length > 0) {
+  if (lines.length > base) {
     const latestLine: DrawCommand | undefined = lines.pop();
     if (latestLine) {
       redoLines.push(latestLine);
@@ -287,7 +289,7 @@ function undo() {
 }
 
 function redo() {
-  if (redoLines.length > 0) {
+  if (redoLines.length > base) {
     const latestLine: DrawCommand | undefined = redoLines.pop();
     if (latestLine) {
       lines.push(latestLine);
@@ -297,7 +299,7 @@ function redo() {
 }
 
 function clear() {
-  lines.splice(0, lines.length);
+  lines.splice(base, lines.length);
   notify("drawing-changed");
 }
 
@@ -322,8 +324,8 @@ function exportCanvas() {
 
   tempCtx.scale(canvasMultiplier, canvasMultiplier);
   tempCtx.fillStyle = "#fca311";
-  tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-  tempCtx.fillRect(0, 0, canvasSize, canvasSize);
+  tempCtx.clearRect(base, base, tempCanvas.width, tempCanvas.height);
+  tempCtx.fillRect(base, base, canvasSize, canvasSize);
   for (const line of lines) {
     line.display(tempCtx);
   }
