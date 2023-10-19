@@ -284,6 +284,14 @@ customStickerButton.addEventListener("click", () => {
   createCustomButton();
 });
 
+const exportButton = document.createElement("button");
+exportButton.innerHTML = "export";
+utilityButtonContainer.appendChild(exportButton);
+
+exportButton.addEventListener("click", () => {
+  exportCanvas();
+});
+
 function undo() {
   if (lines.length > 0) {
     const latestLine: DrawCommand | undefined = lines.pop();
@@ -319,4 +327,25 @@ function createCustomButton() {
   };
   allBrushes.push(newBrush);
   addBrushButton(newBrush);
+}
+
+function exportCanvas() {
+  const tempCanvas: HTMLCanvasElement = document.createElement("canvas");
+  tempCanvas.width = 1024;
+  tempCanvas.height = 1024;
+  const tempCtx: CanvasRenderingContext2D = tempCanvas.getContext("2d")!;
+
+  tempCtx.scale(4, 4);
+  tempCtx.fillStyle = "green";
+  tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+  tempCtx.fillRect(0, 0, 256, 256);
+  for (const line of lines) {
+    line.display(tempCtx);
+  }
+  previewCmd?.display(tempCtx);
+
+  const anchor = document.createElement("a");
+  anchor.href = tempCanvas.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
 }
