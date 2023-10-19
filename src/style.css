@@ -86,3 +86,15 @@ canvas {
   border-radius: 10px;
   filter: drop-shadow(5px 5px);
 }
+
+input {
+  outline: none;
+  background-color: #ffeac3;
+  margin-bottom: 10px;
+}
+
+input[type='range'] {
+  outline: none;
+  background-color: #ffeac3;
+  margin-bottom: 10px;
+}

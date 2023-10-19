@@ -32,14 +32,15 @@ let previewCmd: PointPreviewCommand | null = null;
 //Brushes
 
 const allBrushes: Brush[] = [
-  { id: "thin", thickness: 1, style: "black", text: "" },
-  { id: "thick", thickness: 5, style: "black", text: "" },
-  { id: "🥕", thickness: 20, style: "black", text: "🥕" },
-  { id: "🦴", thickness: 20, style: "black", text: "🦴" },
-  { id: "🥔", thickness: 20, style: "black", text: "🥔" },
+  { id: "thin", thickness: 1, text: "" },
+  { id: "thick", thickness: 5, text: "" },
+  { id: "🥕", thickness: 20, text: "🥕" },
+  { id: "🦴", thickness: 20, text: "🦴" },
+  { id: "🥔", thickness: 20, text: "🥔" },
 ];
 const allBrushButtons: BrushButton[] = [];
 let currentBrush: Brush = allBrushes[0];
+let currentStyle: string = "black";
 
 header.innerHTML = gameName;
 app.append(header);
@@ -53,7 +54,6 @@ interface Point {
 interface Brush {
   id: string;
   thickness: number;
-  style: string;
   text: string;
 }
 
@@ -78,7 +78,7 @@ class PointPreviewCommand {
       ctx.closePath();
       ctx.fill();
       ctx.lineWidth = 1;
-      ctx.strokeStyle = currentBrush.style;
+      ctx.strokeStyle = currentStyle;
       ctx.stroke();
     } else {
       ctx.font = currentBrush.thickness + "px serif";
@@ -108,21 +108,20 @@ class DrawCommand {
 class LineCommand extends DrawCommand {
   points: Point[];
   brush: Brush | null = null;
+  style: string = "black";
 
-  constructor(
-    p: Point,
-    b: Brush = { id: "default", thickness: 4, style: "black", text: "" }
-  ) {
+  constructor(p: Point, b: Brush = { id: "default", thickness: 4, text: "" }) {
     super();
     this.points = [p];
     this.brush = b;
+    this.style = currentStyle;
   }
 
   display(ctx: CanvasRenderingContext2D) {
     if (!this.brush) {
       return;
     }
-    ctx.strokeStyle = this.brush.style;
+    ctx.strokeStyle = this.style;
     ctx.lineWidth = this.brush.thickness;
     ctx.beginPath();
     const { x, y } = this.points[0];
@@ -140,14 +139,13 @@ class LineCommand extends DrawCommand {
 class StickerCommand extends DrawCommand {
   point: Point | null = null;
   brush: Brush | null = null;
+  style: string = "black";
 
-  constructor(
-    p: Point,
-    b: Brush = { id: "default", thickness: 4, style: "black", text: "" }
-  ) {
+  constructor(p: Point, b: Brush = { id: "default", thickness: 4, text: "" }) {
     super();
     this.point = p;
     this.brush = b;
+    this.style = currentStyle;
   }
 
   display(ctx: CanvasRenderingContext2D) {
@@ -155,6 +153,7 @@ class StickerCommand extends DrawCommand {
       return;
     }
     ctx.font = this.brush.thickness + "px serif";
+    ctx.strokeStyle = this.style;
     ctx.strokeText(this.brush.text, this.point?.x, this.point?.y);
   }
   drag(p: Point) {
@@ -166,9 +165,7 @@ class StickerCommand extends DrawCommand {
 
 const lines: DrawCommand[] = [];
 const redoLines: DrawCommand[] = [];
-
 let currentLine: DrawCommand | null = null;
-
 const cursor = { active: false, x: 0, y: 0 };
 
 canvas.addEventListener("mouseout", () => {
@@ -255,6 +252,7 @@ function swapBrush(b: Brush) {
 //Utility Buttons
 
 const utilityButtonContainer = document.createElement("div");
+utilityButtonContainer.style.marginBottom = "10px";
 const utilityButtons: HTMLButtonElement[] = [];
 document.body.appendChild(utilityButtonContainer);
 
@@ -308,7 +306,6 @@ function createCustomButton() {
   const newBrush: Brush = {
     id: text,
     thickness: 20,
-    style: "black",
     text: text,
   };
   allBrushes.push(newBrush);
@@ -337,3 +334,16 @@ function exportCanvas() {
   anchor.download = "sketchpad.png";
   anchor.click();
 }
+
+const inputContainer = document.createElement("div");
+document.body.appendChild(inputContainer);
+
+const colorPicker = document.createElement("input");
+colorPicker.style.marginRight = "20px";
+colorPicker.setAttribute("type", "color");
+inputContainer.appendChild(colorPicker);
+
+colorPicker.addEventListener("input", (event) => {
+  const selectedColor = (event.target as HTMLInputElement).value;
+  currentStyle = selectedColor;
+});
