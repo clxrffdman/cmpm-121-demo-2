@@ -317,7 +317,7 @@ function createCustomButton() {
 
 function exportCanvas() {
   const tempCanvas: HTMLCanvasElement = document.createElement("canvas");
-  const canvasMultiplier: number = 4;
+  const canvasMultiplier = 4;
   const tempCanvasSize = canvasMultiplier * canvasSize;
   tempCanvas.width = tempCanvasSize;
   tempCanvas.height = tempCanvasSize;
