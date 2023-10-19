@@ -2,7 +2,7 @@ import "./style.css";
 
 const app: HTMLDivElement = document.querySelector("#app")!;
 
-const gameName = "Calex's game!";
+const gameName = "post-it";
 
 document.title = gameName;
 
@@ -24,12 +24,13 @@ const ctx: CanvasRenderingContext2D = canvas.getContext("2d")!;
 canvas.width = canvasSize;
 canvas.height = canvasSize;
 
-ctx.fillStyle = "green";
+ctx.fillStyle = "#fca311";
 ctx.fillRect(0, 0, canvasSize, canvasSize);
 
 let previewCmd: PointPreviewCommand | null = null;
 
 //Brushes
+
 const allBrushes: Brush[] = [
   { id: "thin", thickness: 1, style: "black", text: "" },
   { id: "thick", thickness: 5, style: "black", text: "" },
@@ -73,7 +74,7 @@ class PointPreviewCommand {
       ctx.beginPath();
       const { x, y } = this.point;
       ctx.arc(x, y, currentBrush.thickness, 0, 2 * Math.PI, false);
-      ctx.fillStyle = "green";
+      ctx.fillStyle = "#fca311";
       ctx.closePath();
       ctx.fill();
       ctx.lineWidth = 1;
@@ -170,6 +171,11 @@ let currentLine: DrawCommand | null = null;
 
 const cursor = { active: false, x: 0, y: 0 };
 
+canvas.addEventListener("mouseout", () => {
+  previewCmd = null;
+  notify("tool-moved");
+});
+
 canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
   cursor.x = e.offsetX;
@@ -207,12 +213,10 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
-canvas.addEventListener("mouseup", (e) => {
-  if (e) {
-    cursor.active = false;
-    currentLine = null;
-    notify("drawing-changed");
-  }
+canvas.addEventListener("mouseup", () => {
+  cursor.active = false;
+  currentLine = null;
+  notify("drawing-changed");
 });
 
 function redraw() {
@@ -228,6 +232,7 @@ function redraw() {
 
 const brushButtonContainer = document.createElement("div");
 document.body.appendChild(brushButtonContainer);
+brushButtonContainer.style.marginBottom = "5px";
 
 allBrushes.forEach((element) => {
   addBrushButton(element);
@@ -236,6 +241,7 @@ allBrushes.forEach((element) => {
 function addBrushButton(b: Brush) {
   const newBrushButton: HTMLButtonElement = document.createElement("button");
   newBrushButton.innerHTML = b.id;
+  newBrushButton.style.marginRight = "5px";
   const brushButton: BrushButton = { button: newBrushButton, brush: b };
   newBrushButton.addEventListener("click", () => swapBrush(b));
   brushButtonContainer.appendChild(newBrushButton);
@@ -249,47 +255,27 @@ function swapBrush(b: Brush) {
 //Utility Buttons
 
 const utilityButtonContainer = document.createElement("div");
-
+const utilityButtons: HTMLButtonElement[] = [];
 document.body.appendChild(utilityButtonContainer);
 
-const clearButton = document.createElement("button");
-clearButton.innerHTML = "clear";
-utilityButtonContainer.appendChild(clearButton);
+addUtilityButton("clear", clear);
+addUtilityButton("undo", undo);
+addUtilityButton("redo", redo);
+addUtilityButton("custom", createCustomButton);
+addUtilityButton("export", exportCanvas);
 
-clearButton.addEventListener("click", () => {
-  clear();
-});
+function addUtilityButton(name: string, fn: () => void) {
+  const utilButton = document.createElement("button");
+  utilButton.innerHTML = name;
+  utilButton.addEventListener("click", () => {
+    fn();
+  });
+  utilityButtons.push(utilButton);
+}
 
-const undoButton = document.createElement("button");
-undoButton.innerHTML = "undo";
-utilityButtonContainer.appendChild(undoButton);
-
-undoButton.addEventListener("click", () => {
-  undo();
-});
-
-const redoButton = document.createElement("button");
-redoButton.innerHTML = "redo";
-utilityButtonContainer.appendChild(redoButton);
-
-redoButton.addEventListener("click", () => {
-  redo();
-});
-
-const customStickerButton = document.createElement("button");
-customStickerButton.innerHTML = "custom";
-utilityButtonContainer.appendChild(customStickerButton);
-
-customStickerButton.addEventListener("click", () => {
-  createCustomButton();
-});
-
-const exportButton = document.createElement("button");
-exportButton.innerHTML = "export";
-utilityButtonContainer.appendChild(exportButton);
-
-exportButton.addEventListener("click", () => {
-  exportCanvas();
+utilityButtons.forEach((element) => {
+  utilityButtonContainer.appendChild(element);
+  element.style.marginRight = "5px";
 });
 
 function undo() {
@@ -331,14 +317,16 @@ function createCustomButton() {
 
 function exportCanvas() {
   const tempCanvas: HTMLCanvasElement = document.createElement("canvas");
-  tempCanvas.width = 1024;
-  tempCanvas.height = 1024;
+  const canvasMultiplier: number = 4;
+  const tempCanvasSize = canvasMultiplier * canvasSize;
+  tempCanvas.width = tempCanvasSize;
+  tempCanvas.height = tempCanvasSize;
   const tempCtx: CanvasRenderingContext2D = tempCanvas.getContext("2d")!;
 
-  tempCtx.scale(4, 4);
-  tempCtx.fillStyle = "green";
+  tempCtx.scale(canvasMultiplier, canvasMultiplier);
+  tempCtx.fillStyle = "#fca311";
   tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-  tempCtx.fillRect(0, 0, 256, 256);
+  tempCtx.fillRect(0, 0, canvasSize, canvasSize);
   for (const line of lines) {
     line.display(tempCtx);
   }

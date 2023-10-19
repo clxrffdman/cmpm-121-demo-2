@@ -47,7 +47,7 @@ h1 {
 
 button {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 2px solid transparent;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
@@ -68,16 +68,16 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: #14213d;
+    background-color: #fdd9af;
   }
 
   a:hover {
-    color: #747bff;
+    color: #14213d;
   }
 
   button {
-    background-color: #f9f9f9;
+    background-color: #ffeac3;
   }
 }
 
