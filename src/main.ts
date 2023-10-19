@@ -162,6 +162,7 @@ class StickerCommand extends DrawCommand {
 }
 
 //starter code from https://shoddy-paint.glitch.me/paint1.html + starter code from https://shoddy-paint.glitch.me/paint2.html
+
 const lines: DrawCommand[] = [];
 const redoLines: DrawCommand[] = [];
 
@@ -223,7 +224,10 @@ function redraw() {
   previewCmd?.display(ctx);
 }
 
-document.body.append(document.createElement("br"));
+//Brush Buttons
+
+const brushButtonContainer = document.createElement("div");
+document.body.appendChild(brushButtonContainer);
 
 allBrushes.forEach((element) => {
   addBrushButton(element);
@@ -234,7 +238,7 @@ function addBrushButton(b: Brush) {
   newBrushButton.innerHTML = b.id;
   const brushButton: BrushButton = { button: newBrushButton, brush: b };
   newBrushButton.addEventListener("click", () => swapBrush(b));
-  document.body.append(newBrushButton);
+  brushButtonContainer.appendChild(newBrushButton);
   allBrushButtons.push(brushButton);
 }
 
@@ -242,20 +246,45 @@ function swapBrush(b: Brush) {
   currentBrush = b;
 }
 
+//Utility Buttons
+
+const utilityButtonContainer = document.createElement("div");
+
+document.body.appendChild(utilityButtonContainer);
+
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "clear";
-document.body.append(clearButton);
+utilityButtonContainer.appendChild(clearButton);
 
 clearButton.addEventListener("click", () => {
-  lines.splice(0, lines.length);
-  notify("drawing-changed");
+  clear();
 });
 
 const undoButton = document.createElement("button");
 undoButton.innerHTML = "undo";
-document.body.append(undoButton);
+utilityButtonContainer.appendChild(undoButton);
 
 undoButton.addEventListener("click", () => {
+  undo();
+});
+
+const redoButton = document.createElement("button");
+redoButton.innerHTML = "redo";
+utilityButtonContainer.appendChild(redoButton);
+
+redoButton.addEventListener("click", () => {
+  redo();
+});
+
+const customStickerButton = document.createElement("button");
+customStickerButton.innerHTML = "custom";
+utilityButtonContainer.appendChild(customStickerButton);
+
+customStickerButton.addEventListener("click", () => {
+  createCustomButton();
+});
+
+function undo() {
   if (lines.length > 0) {
     const latestLine: DrawCommand | undefined = lines.pop();
     if (latestLine) {
@@ -263,13 +292,9 @@ undoButton.addEventListener("click", () => {
     }
     notify("drawing-changed");
   }
-});
+}
 
-const redoButton = document.createElement("button");
-redoButton.innerHTML = "redo";
-document.body.append(redoButton);
-
-redoButton.addEventListener("click", () => {
+function redo() {
   if (redoLines.length > 0) {
     const latestLine: DrawCommand | undefined = redoLines.pop();
     if (latestLine) {
@@ -277,4 +302,21 @@ redoButton.addEventListener("click", () => {
     }
     notify("drawing-changed");
   }
-});
+}
+
+function clear() {
+  lines.splice(0, lines.length);
+  notify("drawing-changed");
+}
+
+function createCustomButton() {
+  const text = prompt("Custom sticker text:", "🧽")!;
+  const newBrush: Brush = {
+    id: text,
+    thickness: 20,
+    style: "black",
+    text: text,
+  };
+  allBrushes.push(newBrush);
+  addBrushButton(newBrush);
+}
